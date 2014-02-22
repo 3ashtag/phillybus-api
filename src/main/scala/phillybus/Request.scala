@@ -19,10 +19,18 @@ class Request() extends Actor {
 
 	def getRequest(get : GetRequest) = get match {
     case GetRequest(t : String, m : Map[String, String]) =>
-		sender ! Http(get.url).header("content-type", "application/json").params(get.params).option(HttpOptions.readTimeout(5000)).asString
+      try {
+        val request = Http(get.url).header("content-type", "application/json").params(get.params).option(HttpOptions.readTimeout(5000)).asString
+        sender ! request
+      } catch {
+        case ste : java.net.SocketTimeoutException => 
+          log.warning(ste.toString)
+          sender ! ste
+      }
     case GetRequest(t : String, null) =>
       sender ! Http(get.url).header("content-type", "application/json").option(HttpOptions.readTimeout(5000)).asString
     case _ => log.warning("Not a valid request")
+    "Not a valid request"
 	}
 
 	def postRequest(post : PostRequest) {
@@ -48,15 +56,14 @@ object RequestApp extends App {
     val myActor = actorSystem.actorOf(Props[Request], name="requestActor")
     val future = myActor ? GetRequest("http://www3.septa.org/hackathon/TransitView", Map("route" -> routeId.toString))
     val result = Await.result(future, timeout.duration).asInstanceOf[String]
-    //  println(result)
     try {
       val json = parse(result)
       json.extract[JSONSepta]
     } catch {
-      case _ => println("The routeId is not valid")
-      null
+      case ste : java.net.SocketTimeoutException => throw ste
+      case _ => new JSONSepta(List[JSONBus]())
     }
-  } 
+  }
 
 }
 
