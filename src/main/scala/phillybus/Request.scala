@@ -47,6 +47,7 @@ class Request() extends Actor {
 
 
 
+/**
 object RequestApp extends App {
   implicit val timeout = Timeout(10 seconds)
 	implicit val formats = DefaultFormats
@@ -67,6 +68,7 @@ object RequestApp extends App {
   }
 
 }
+**/
 
 case class GetRequest(url : String, params : Map[String, String] = null) {}
 

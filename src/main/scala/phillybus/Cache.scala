@@ -8,7 +8,7 @@ object Cache extends Actor {
 
   def receive = {
     //Doesn't need caching since it doesn't change
-    case StopsByLocation(longitude: Double, latitude: Double) =>
+    case LatLongPair(longitude: Double, latitude: Double) =>
       println("Need stops at: " + longitude + ", " + latitude)
     case BusLocationById(busId: Int) =>
       busLocations.ensureIsUpdated()

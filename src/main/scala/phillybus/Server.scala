@@ -30,13 +30,18 @@ object Server extends App {
   
   DatabaseInitialization.initDB
 
+  def parseDouble(s: String) = try { Some(s.toDouble)  } catch { case _ => None  }
   val routes = Routes({
     case HttpRequest(request) => request match {
-      case (GET(Path("/arrivals/nearby")) & LatitudeQueryString(latitude) & LongitudeQueryString(longitude)) => {
-        actorSystem.actorOf(Props[HelloHandler]) ! request
+      case (GET(Path("/stops/nearby")) & LatitudeQueryString(latitude) & LongitudeQueryString(longitude)) => {
+        (parseDouble(latitude), parseDouble(longitude)) match {
+          case (Some(lat), Some(long)) =>
+            actorSystem.actorOf(Props(new StopsHandler(request))) ! LatLongPair(lat, long)
+          case _ =>
+            request.response.write(HttpResponseStatus.BAD_REQUEST)
+         }
       }
       case _ => {
-        println(request.endPoint)
         request.response.write(HttpResponseStatus.BAD_REQUEST)
       }
     }
