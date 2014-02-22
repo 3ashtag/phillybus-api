@@ -4,7 +4,7 @@ class BusLocations(updateRate: Int) {
   var updatedAt = new UpdatedAt(updateRate)
 
   def ensureIsUpdated() = {
-    if(updatedAt.isUpdated()) {
+    if(!updatedAt.isUpdated()) {
       update()
     }
   }
