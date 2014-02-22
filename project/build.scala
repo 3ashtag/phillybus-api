@@ -40,7 +40,7 @@ object Dependencies {
   import Dependency._
   val phillybus = Seq(
     Dependency.akkaActor, Dependency.scalatime, Dependency.squeryl, Dependency.json4sjackson, Dependency.slf4j, Dependency.socko,
-    Dependency.scalamock
+    Dependency.scalamock, Dependency.csvReader, Dependency.h2
   )
 }
 
@@ -57,4 +57,6 @@ object Dependency {
   val slf4j = "org.slf4j" % "slf4j-nop" % "1.6.4"
   val socko = "org.mashupbots.socko" %% "socko-webserver" % "0.4.1"
   val scalamock = "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1" % "test"
+  val csvReader= "com.github.tototoshi" %% "scala-csv" % "1.0.0"
+  val h2 = "com.h2database" % "h2" % "1.3.166"
 }

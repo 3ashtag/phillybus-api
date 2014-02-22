@@ -1,5 +1,5 @@
 package phillybus
 
 object Server extends App {
-  println("HI")
+  DatabaseInitialization.initDB
 }
