@@ -39,8 +39,7 @@ object PhillyBus extends Build {
 object Dependencies {
   import Dependency._
   val phillybus = Seq(
-    Dependency.akkaActor, Dependency.scalatime, Dependency.squeryl, Dependency.json4sjackson, Dependency.slf4j, Dependency.socko,
-    Dependency.scalaj
+    Dependency.akkaActor, Dependency.scalatime, Dependency.squeryl, Dependency.json4sjackson, Dependency.slf4j, Dependency.socko, Dependency.scalaj,
     Dependency.scalamock
   )
 }
