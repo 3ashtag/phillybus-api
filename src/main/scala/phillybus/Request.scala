@@ -52,16 +52,16 @@ object RequestApp extends App {
   val actorSystem = ActorSystem("requestSystem")
   println(getTransitForRoute(20))	
 
-  def getTransitForRoute(routeId : Int) : JSONSepta = {
+  def getTransitForRoute(routeId : Int) : List[JSONBus] = {
     val myActor = actorSystem.actorOf(Props[Request], name="requestActor")
     val future = myActor ? GetRequest("http://www3.septa.org/hackathon/TransitView", Map("route" -> routeId.toString))
     val result = Await.result(future, timeout.duration).asInstanceOf[String]
     try {
       val json = parse(result)
-      json.extract[JSONSepta]
+      json.extract[List[JSONBus]]
     } catch {
       case ste : java.net.SocketTimeoutException => throw ste
-      case _ => new JSONSepta(List[JSONBus]())
+      case _ => List[JSONBus]()
     }
   }
 
@@ -76,3 +76,7 @@ case class JSONBus(lat : Either[String, Double], lng : String, label : String, V
 case class JSONSepta(bus : List[JSONBus])
 case class JSONRoute(route : Map[Int, List[JSONBus]])
 case class JSONTransitAll(data : List[JSONRoute])
+
+case class JSONStop(location_id : Int, location_name : 
+                    String, location_lat : String, location_lon : String,
+                    distance : String)
