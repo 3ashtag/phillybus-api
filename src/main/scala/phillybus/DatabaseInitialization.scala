@@ -14,27 +14,25 @@ object DatabaseInitialization {
   val format = new java.text.SimpleDateFormat("yyyyMMdd")
 
   def initDB = {
-    if(Files.exists(Paths.get("phillybus.h2.db"))){
-      Files.delete(Paths.get("phillybus.h2.db"))
-    }
+    if(!Files.exists(Paths.get("phillybus.h2.db"))){
+      Class.forName("org.h2.Driver");
+      SessionFactory.concreteFactory = Some (() =>
+          Session.create(
+          java.sql.DriverManager.getConnection("jdbc:h2:phillybus"),
+          new H2Adapter))
+      
+      transaction {
+        Database.create
+        Database.printDdl
+      }
 
-    Class.forName("org.h2.Driver");
-    SessionFactory.concreteFactory = Some (() =>
-        Session.create(
-        java.sql.DriverManager.getConnection("jdbc:h2:phillybus"),
-        new H2Adapter))
-    
-    transaction {
-      Database.create
-      Database.printDdl
+      addStops()
+      addTrips()
+      addRoutes()
+      addCalendar()
+      addCalendarDates()
+      addRoutesStops()
     }
-
-    // addStops()
-    addStopTimes()
-    // addTrips()
-    // addRoutes()
-    // addCalendar()
-    // addCalendarDates()
   }
 
   def addStops() = {
@@ -48,21 +46,6 @@ object DatabaseInitialization {
       while(iterator.hasNext) {
         val row = iterator.next
         Database.stops.insert(new Stop(row(0).toInt, row(1), row(2).toDouble, row(3).toDouble))
-      }
-    }
-  }
-
-  def addStopTimes() = {
-    val reader = CSVReader.open("src/main/resources/dataSources/stop_times.txt")
-    val iterator = reader.iterator
-
-    //Throw away line with headers
-    iterator.next
-
-    transaction {
-      while(iterator.hasNext) {
-        val row = iterator.next
-        Database.stopTimes.insert(new StopTime(row(0).toInt, row(3).toInt, row(1), row(2)))
       }
     }
   }
@@ -129,7 +112,7 @@ object DatabaseInitialization {
     }
   }
 
-  def addCalendarDates() = {
+  def addRoutesStops() = {
     val reader = CSVReader.open("src/main/resources/dataSources/routes_stops.txt")
     val iterator = reader.iterator
 

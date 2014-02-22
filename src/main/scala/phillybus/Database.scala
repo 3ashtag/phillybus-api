@@ -9,7 +9,6 @@ import java.sql.Timestamp
 
 object Database extends Schema {
   val stops = table[Stop]
-  val stopTimes = table[StopTime]
   val trips = table[Trip]
   val routes = table[Route]
   val calendar = table[Calendar]
@@ -23,12 +22,6 @@ case class Stop(
     val stop_name: String,
     val stop_lat: Double,
     val stop_lon: Double)
-
-case class StopTime(
-    val trip_id: Int,
-    val stop_id: Int,
-    val arrival_time: String,
-    val departure_time: String)
 
 case class Trip(
     val route_id: Int,
