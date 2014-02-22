@@ -40,6 +40,7 @@ object Dependencies {
   import Dependency._
   val phillybus = Seq(
     Dependency.akkaActor, Dependency.scalatime, Dependency.squeryl, Dependency.json4sjackson, Dependency.slf4j, Dependency.socko,
+    Dependency.scalaj
     Dependency.scalamock
   )
 }
@@ -56,5 +57,6 @@ object Dependency {
   val json4sjackson = "org.json4s" %% "json4s-jackson" % "3.2.6"
   val slf4j = "org.slf4j" % "slf4j-nop" % "1.6.4"
   val socko = "org.mashupbots.socko" %% "socko-webserver" % "0.4.1"
+  val scalaj = "org.scalaj" %% "scalaj-http" % "0.3.14"
   val scalamock = "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1" % "test"
 }
