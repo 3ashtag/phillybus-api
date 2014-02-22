@@ -39,7 +39,7 @@ object PhillyBus extends Build {
 object Dependencies {
   import Dependency._
   val phillybus = Seq(
-    Dependency.akkaActor, Dependency.scalatime, Dependency.squeryl, Dependency.json4sjackson, Dependency.slf4j, Dependency.socko,
+    Dependency.akkaActor, Dependency.scalatime, Dependency.squeryl, Dependency.json4sjackson, Dependency.slf4j, Dependency.socko, Dependency.scalaj,
     Dependency.scalamock, Dependency.csvReader, Dependency.h2
   )
 }
@@ -56,6 +56,7 @@ object Dependency {
   val json4sjackson = "org.json4s" %% "json4s-jackson" % "3.2.6"
   val slf4j = "org.slf4j" % "slf4j-nop" % "1.6.4"
   val socko = "org.mashupbots.socko" %% "socko-webserver" % "0.4.1"
+  val scalaj = "org.scalaj" %% "scalaj-http" % "0.3.14"
   val scalamock = "org.scalamock" %% "scalamock-scalatest-support" % "3.0.1" % "test"
   val csvReader= "com.github.tototoshi" %% "scala-csv" % "1.0.0"
   val h2 = "com.h2database" % "h2" % "1.3.166"
