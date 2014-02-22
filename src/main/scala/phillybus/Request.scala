@@ -13,6 +13,7 @@ import akka.actor.ActorSystem
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import org.json4s.JsonDSL._
 
 class Request() extends Actor {
 	val log = Logging(context.system, this)
@@ -79,4 +80,13 @@ case class JSONTransitAll(data : List[JSONRoute])
 
 case class JSONStop(location_id : Int, location_name : 
                     String, location_lat : String, location_lon : String,
-                    distance : String)
+                    distance : String) {
+
+  def asJson() : JObject = {
+    ("location_id" -> location_id) ~
+    ("location_name" -> location_name) ~
+    ("location_lat" -> location_lat) ~
+    ("location_lon" -> location_lon) ~
+    ("distance" -> distance)    
+  }
+}
