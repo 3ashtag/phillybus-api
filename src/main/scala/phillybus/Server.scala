@@ -27,6 +27,9 @@ object Server extends App {
 
   private val log = LoggerFactory.getLogger(getClass)
   val actorSystem = ActorSystem("PhillyBusFinderSystem")
+  
+  DatabaseInitialization.initDB
+
   val routes = Routes({
     case HttpRequest(request) => request match {
       case (GET(Path("/arrivals/nearby")) & LatitudeQueryString(latitude) & LongitudeQueryString(longitude)) => {
@@ -46,5 +49,4 @@ object Server extends App {
   Runtime.getRuntime.addShutdownHook(new Thread {
     override def run { webServer.stop()  }
   })
-
 }
