@@ -66,7 +66,7 @@ class DBAccess {
     }
   }
 
-  def getCordsByStop(stopId: Int): LatLongPair = {
+  def getCoordsByStop(stopId: Int): LatLongPair = {
     Class.forName("org.h2.Driver");
       SessionFactory.concreteFactory = Some (() =>
           Session.create(

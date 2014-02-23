@@ -2,6 +2,8 @@ package phillybus
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.concurrent.Future
+import scala.collection.mutable.ArrayBuffer
 
 import akka.actor.Actor
 import akka.actor.Props
@@ -11,20 +13,20 @@ import akka.util.Timeout
 import org.mashupbots.socko.events.HttpRequestEvent
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import com.github.nscala_time.time.Imports._
+import com.github.nscala_time.time.Imports.{DateTime}
 
 class StopsHandler(request: HttpRequestEvent) extends Actor {
   implicit val timeout = Timeout(10 seconds)
   implicit val formats = DefaultFormats
   val dbAccess = new DBAccess()
 
-  def findClosest(stopCoords: LatLongPair, buses: List[JSONBus], direction: String): JSONBus = {
-    val possibleBuses = buses.filter(bus => bus.direction != direction)
+  def findClosest(stopCoords: LatLongPair, buses: List[JSONBus], direction: String): JObject = {
+    val possibleBuses = buses.filter(bus => bus.Direction != direction)
     
-    var closestBus = null
-    var minDistance = 10001000100010000
+    var closestBus : JSONBus = null
+    var minDistance : Double = 1000
     for(bus <- buses) {
-      val distance = Haversine.haversine(stop.latitude, stop.longitude, bus.latitude, bus.longitude)
+      val distance = Haversine.haversine(stopCoords.latitude, stopCoords.longitude, bus.lat.toDouble, bus.lng.toDouble)
       if(closestBus != null){
         if(distance < minDistance){
           closestBus = bus
@@ -36,7 +38,9 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       }
     }
 
-    return closestBus
+    closestBus.asJson
+
+    // return closestBus
   }
 
   def receive = {
@@ -62,9 +66,9 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
 
       routes.foreach((routeId: Int) => {
         println("HI")
-      }
+      })
 
-    case ScheduleByStopAndRoute(stopId: Int, routeId: String) 
+    case ScheduleByStopAndRoute(stopId: Int, routeId: String) =>
       val scheduleFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", 
           Map("req1" -> stopId.toString, "req2" -> routeId, "req6" -> "5"))
       val busFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
@@ -73,18 +77,21 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       val scheduleString = Await.result(scheduleFuture, timeout.duration).asInstanceOf[String]
       val busString = Await.result(busFuture, timeout.duration).asInstanceOf[String]
 
-      val jsonSchedule = json.extract[JSONSepta]
+      val jsonSchedule = parse(scheduleString).extract[JSONSchedule]
       val jsonBus = parse(busString).extract[JSONSepta]
 
-      val direction = dbAccess.getRouteDirection(routeId, jsonSchedule.Direction)
+
+      val direction = dbAccess.getRouteDirection(routeId, jsonSchedule.Direction.toInt)
       val stopCoords = dbAccess.getCoordsByStop(stopId)
-      val nextBus = findClosest(buses)
+      //FIX THIS LATER
+      val buses = null
+      val nextBus = findClosest(stopCoords, buses, direction)
 
       request.response.contentType = "application/json"
       if(nextBus != null) {
         request.response.write(compact(render(nextBus)))
       } else {
-        request.response.write(compact(render(new JArray())))
+        request.response.write(compact(render(JNothing)))
       }
 
     case GetAllRoutes() =>
@@ -94,7 +101,6 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
 
     case _ =>
       println("Failure from StopsActor")
-    
   }
 }
 
