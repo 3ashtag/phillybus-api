@@ -13,10 +13,9 @@ import akka.util.Timeout
 import org.mashupbots.socko.events.HttpRequestEvent
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import com.github.nscala_time.time.Imports.{DateTime}
 
 class StopsHandler(request: HttpRequestEvent) extends Actor {
-  implicit val timeout = Timeout(10 seconds)
+  implicit val timeout = Timeout(4 seconds)
   implicit val formats = DefaultFormats
   val dbAccess = new DBAccess()
 
@@ -64,9 +63,7 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       val routes = dbAccess.getRoutesByStop(stopId)
       val routesProcessed = new ArrayBuffer[Future[Any]]
 
-      routes.foreach((routeId: Int) => {
-        println("HI")
-      })
+      println(routes)
 
     case ScheduleByStopAndRoute(stopId: Int, routeId: String) =>
       val scheduleFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", 
@@ -74,17 +71,18 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       val busFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
         Map("route" -> routeId))
 
-      val scheduleString = Await.result(scheduleFuture, timeout.duration).asInstanceOf[String]
+      var scheduleString = Await.result(scheduleFuture, timeout.duration).asInstanceOf[String]
       val busString = Await.result(busFuture, timeout.duration).asInstanceOf[String]
 
-      val jsonSchedule = parse(scheduleString).extract[JSONSchedule]
-      val jsonBus = parse(busString).extract[JSONSepta]
+      scheduleString = compact(render(parse(scheduleString) \\ routeId))
+      val jsonSchedule = parse(scheduleString).extract[List[JSONSchedule]]
+      val jsonBuses = parse(busString).extract[JSONSepta]
 
-
-      val direction = dbAccess.getRouteDirection(routeId, jsonSchedule.Direction.toInt)
+      val direction = dbAccess.getRouteDirection(routeId, jsonSchedule(0).Direction.toInt)
       val stopCoords = dbAccess.getCoordsByStop(stopId)
-      //FIX THIS LATER
-      val buses = null
+
+      val buses = jsonBuses.bus
+
       val nextBus = findClosest(stopCoords, buses, direction)
 
       request.response.contentType = "application/json"
@@ -97,7 +95,7 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
     case GetAllRoutes() =>
       val routes = dbAccess.getAllRoutes()
       request.response.contentType = "application/json"
-      request.response.write(compact(render(new JArray(routes.map(new JInt(_))))))
+      request.response.write(compact(render(new JArray(routes.map(new JString(_))))))
 
     case _ =>
       println("Failure from StopsActor")

@@ -96,5 +96,15 @@ case class JSONStop(location_id : Int, location_name :
     ("distance" -> distance.toDouble)    
   }
 }
+
+case class JSONArrival(route: String, time: String, offset: Int, warnings: String) {
+  def asJson(): JObject = {
+    ("route" -> route) ~
+    ("time" -> time) ~
+    ("offset" -> offset) ~
+    ("warnings" -> warnings)
+  }
+                    
+}
 case class JSONSchedule(StopName : String, Route : String, 
   date : String, day : String, Direction : String)

@@ -25,7 +25,7 @@ object Server extends App {
   object LatitudeQueryString extends QueryStringField("lat")
   object LongitudeQueryString extends QueryStringField("long")
   object StopIdQueryString extends QueryStringField("stopId")
-  object RouteQueryString extends QueryStringField("route")
+  object RouteIdQueryString extends QueryStringField("routeId")
 
   private val log = LoggerFactory.getLogger(getClass)
   val actorSystem = ActorSystem("PhillyBusFinderSystem")
@@ -44,6 +44,17 @@ object Server extends App {
             request.response.write(HttpResponseStatus.BAD_REQUEST)
          }
       }
+
+      case (GET(Path("/stops/schedules")) & StopIdQueryString(stopId) & RouteIdQueryString(routeId)) => {
+        (parseInt(stopId)) match {
+          case Some(stop) =>
+          println("IN RIGHT ROUTE")
+            actorSystem.actorOf(Props(new StopsHandler(request))) ! ScheduleByStopAndRoute(stop, routeId)
+          case _ =>
+            request.response.write(HttpResponseStatus.BAD_REQUEST)
+        }
+      }
+
       case (GET(Path("/stops/schedules")) & StopIdQueryString(stopId)) => {
         (parseInt(stopId)) match {
           case Some(stop) =>
@@ -52,6 +63,7 @@ object Server extends App {
             request.response.write(HttpResponseStatus.BAD_REQUEST)
         }
       }
+      
       case (GET(Path("/routes"))) => {
         actorSystem.actorOf(Props(new StopsHandler(request))) ! GetAllRoutes()
       }

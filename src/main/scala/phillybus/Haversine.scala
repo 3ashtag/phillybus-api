@@ -13,8 +13,4 @@ object Haversine {
       val c = 2 * asin(sqrt(a))
       R * c * 0.621371 // Convert to miles for these plebians
    }
- 
-   def main(args: Array[String]): Unit = {
-      println(haversine(36.12, -86.67, 33.94, -118.40))
-  }
 }

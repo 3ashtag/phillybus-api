@@ -23,7 +23,7 @@ class DBAccess {
     }
   }
 
-  def getAllRoutes(): List[Int] = {
+  def getAllRoutes(): List[String] = {
     Class.forName("org.h2.Driver");
       SessionFactory.concreteFactory = Some (() =>
           Session.create(
@@ -33,7 +33,7 @@ class DBAccess {
     transaction {
       val routes = from(Database.routes)(row=>
         where(1 === 1)
-        select(row.id)
+        select(row.route_short_name)
       )
 
       routes.toList
