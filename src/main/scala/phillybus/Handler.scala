@@ -151,6 +151,22 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
   }
 }
 
+
+class RouteHandler(request : HttpRequestEvent) extends Actor {
+  implicit val timeout = Timeout(10 seconds)
+  implicit val formats = DefaultFormats
+  val dbAccess = new DBAccess()
+
+  def receive = {
+    case RoutesByStopId(stopId: Int) =>
+      val routes = dbAccess.getRoutesByStop(stopId)
+      val routesJSON: List[JObject] = routes.map{x => new JSONRouteInfo(x.toString).asJson()}
+      request.response.contentType = "application/json"
+      request.response.write(compact(render(new JArray(routesJSON.toList))))
+  }
+}
+
+
 class BusByRouteHandler(request : HttpRequestEvent) extends Actor {
   implicit val timeout = Timeout(10 seconds)
   implicit val formats = DefaultFormats

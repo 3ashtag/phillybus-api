@@ -8,18 +8,6 @@ import org.mashupbots.socko.routes._
 import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
 import org.slf4j.{Logger, LoggerFactory}
 
-// TEMPORARY
-import akka.actor.Actor
-import org.mashupbots.socko.events.HttpRequestEvent
-// END TEMPORARY
-
-class HelloHandler extends Actor {
-  def receive = {
-    case event: HttpRequestEvent =>
-      event.response.write("HELLO")
-      context.stop(self)
-  }
-}
 
 object Server extends App {
   object LatitudeQueryString extends QueryStringField("lat")
@@ -48,7 +36,6 @@ object Server extends App {
       case (GET(Path("/stops/schedules")) & StopIdQueryString(stopId) & RouteIdQueryString(routeId)) => {
         (parseInt(stopId)) match {
           case Some(stop) =>
-          println("IN RIGHT ROUTE")
             actorSystem.actorOf(Props(new StopsHandler(request))) ! ScheduleByStopAndRoute(stop, routeId)
           case _ =>
             request.response.write(HttpResponseStatus.BAD_REQUEST)
@@ -67,6 +54,16 @@ object Server extends App {
       case (GET(Path("/routes"))) => {
         actorSystem.actorOf(Props(new StopsHandler(request))) ! GetAllRoutes()
       }
+
+      case (GET(Path("/routes")) & StopIdQueryString(stopId)) => {
+        (parseInt(stopId)) match {
+          case Some(stop) =>
+            actorSystem.actorOf(Props(new RouteHandler(request))) ! RoutesByStopId(stop)
+          case _ =>
+            request.response.write(HttpResponseStatus.BAD_REQUEST)
+        }
+      }
+
       case (GET(PathSegments("routes" :: routeId :: Nil))) => {        
           actorSystem.actorOf(Props(new BusByRouteHandler(request))) ! RouteId(routeId)
       }

@@ -83,6 +83,12 @@ case class JSONBus(lat : String, lng : String, label : String, VehicleID : Strin
   }
 }
 case class JSONSepta(bus : List[JSONBus])
+case class JSONRouteInfo(id: String) {
+  def asJson(): JObject = {
+    ("id" -> id)
+  }
+}
+
 case class JSONRoute(route : Map[Int, List[JSONBus]])
 case class JSONTransitAll(data : List[JSONRoute])
 case class JSONScheduled(DateCalender: String, Direction: String)
