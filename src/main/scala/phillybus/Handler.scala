@@ -66,6 +66,7 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       var allArrivals = new ArrayBuffer[JSONArrival]
 
       for(routeId <- routes) {
+          println("FOR ROUTE " + routeId)
           val scheduleFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", 
           Map("req1" -> stopId.toString, "req2" -> routeId.toString, "req6" -> "5"))
           val busFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
@@ -74,11 +75,8 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
           var scheduleString = Await.result(scheduleFuture, timeout.duration).asInstanceOf[String]
           val busString = Await.result(busFuture, timeout.duration).asInstanceOf[String]
 
-          println("HI")
           scheduleString = compact(render(parse(scheduleString) \\ routeId.toString)).replace("/", "-")
-          println(scheduleString)
           val jsonSchedule = parse(scheduleString).extract[List[JSONSchedule]]
-          println(jsonSchedule)
           val jsonBuses = parse(busString).extract[JSONSepta]
 
           val direction = dbAccess.getRouteDirection(routeId.toString, jsonSchedule(0).Direction.toInt)
@@ -91,14 +89,16 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
           var arrivals: ArrayBuffer[JSONArrival] = new ArrayBuffer[JSONArrival]
 
           val warnings = "N/A"
+
           jsonSchedule.foreach{ s=> 
             val dateTime = dtf.parseDateTime(s.DateCalender)
             arrivals += new JSONArrival(routeId.toString, dateTime, 0, warnings) 
           }
 
-          arrivals(0).offset = nextBus.Offset.toInt
+          if(nextBus != null) {
+            arrivals(0).offset = nextBus.Offset.toInt
+          }
           allArrivals ++= arrivals
-          
       }
       implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
       allArrivals = allArrivals.sortBy(_.time)
@@ -114,7 +114,6 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       var scheduleString = Await.result(scheduleFuture, timeout.duration).asInstanceOf[String]
       val busString = Await.result(busFuture, timeout.duration).asInstanceOf[String]
 
-      println("HI")
       scheduleString = compact(render(parse(scheduleString) \\ routeId)).replace("/", "-")
       println(scheduleString)
       val jsonSchedule = parse(scheduleString).extract[List[JSONSchedule]]
@@ -136,8 +135,7 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
         arrivals += new JSONArrival(routeId, dateTime, 0, warnings) 
       }
 
-      arrivals(0).offset = nextBus.Offset.toInt
-
+      arrivals(0).offset = nextBus.Offset.toInt 
       request.response.contentType = "application/json"
       request.response.write(compact(render(new JArray(arrivals.map(_.asJson()).toList))))
 
@@ -186,7 +184,7 @@ class BusByRouteHandler(request : HttpRequestEvent) extends Actor {
     } catch {
       case ste: java.net.SocketTimeoutException => throw ste
       case me : org.json4s.MappingException => throw me
-      case _ => List[JSONSepta]()
+      case e: Exception =>e.printStackTrace()
     }
     case _ =>
       println("Failure from RequestActor")
