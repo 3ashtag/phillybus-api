@@ -37,11 +37,15 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
     case ScheduleByStopid(stopId: Int) =>
       val routes = dbAccess.getRoutesByStop(stopId)
       routes.foreach((routeId: Int) => {
-        val future = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", Map("req1" ->
-          stopId.toString, "req2" -> routeId.toString, "req3" -> "i", "req6" -> "5"))
+        val future = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", 
+          Map("req1" -> stopId.toString, "req2" -> routeId.toString, "req6" -> "5"))
         val result = Await.result(future, timeout.duration).asInstanceOf[String]
-        request.response.contentType = "application/json"
-        request.response.write(result)
+        // println(result)
+        val future1 = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView",
+          Map("route" -> routeId.toString))
+        val result1 = Await.result(future1, timeout.duration).asInstanceOf[String]
+        val json = parse(result1)
+        val jsonbuses = json.extract[JSONSepta]
       })
 
     case GetAllRoutes() =>
@@ -62,7 +66,7 @@ class BusByRouteHandler(request : HttpRequestEvent) extends Actor {
   def receive = {
     case RouteId(routeId: String) =>
     val future = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
-      Map("route" -> routeId))
+      Map("route" -> routeId.toString))
     val result = Await.result(future, timeout.duration).asInstanceOf[String]
     try {
       println(result)
@@ -80,3 +84,5 @@ class BusByRouteHandler(request : HttpRequestEvent) extends Actor {
       println("Failure from RequestActor")
   }
 }
+
+
