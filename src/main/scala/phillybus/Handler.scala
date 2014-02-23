@@ -40,7 +40,8 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
         val future = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", Map("req1" ->
           stopId.toString, "req2" -> routeId.toString, "req3" -> "i", "req6" -> "5"))
         val result = Await.result(future, timeout.duration).asInstanceOf[String]
-        // println(result)
+        request.response.contentType = "application/json"
+        request.response.write(result)
       })
 
     case GetAllRoutes() =>
