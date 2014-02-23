@@ -14,7 +14,7 @@ object Database extends Schema {
   val calendar = table[Calendar]
   val calendarDates = table[CalendarDate]
   val routesStops = table[RoutesStop]
-
+  val routeDirections = table[RouteDirection]
 }
 
 case class Stop(
@@ -56,3 +56,7 @@ case class CalendarDate(
 case class RoutesStop(
   val route_id: Int,
   val stop_id: Int)
+
+case class RouteDirection(
+  val route_name: String,
+  val zero_dir: String)
