@@ -91,7 +91,9 @@ class Estimator extends Actor {
   
       jsonSchedule.foreach{ s=> 
         val dateTime = dtf.parseDateTime(s.DateCalender)
-        arrivals += new JSONArrival(routeId.toString, dateTime, 0, warnings) 
+        if(DateTime.now.isBefore(dateTime)) {
+          arrivals += new JSONArrival(routeId.toString, dateTime, 0, warnings) 
+        }
       }
   
       if(nextBus != null) {
