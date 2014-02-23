@@ -15,6 +15,8 @@ import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import org.json4s.JsonDSL._
 
+import com.github.nscala_time.time.Imports.DateTime
+
 class Request() extends Actor {
 	val log = Logging(context.system, this)
 
@@ -83,7 +85,7 @@ case class JSONBus(lat : String, lng : String, label : String, VehicleID : Strin
 case class JSONSepta(bus : List[JSONBus])
 case class JSONRoute(route : Map[Int, List[JSONBus]])
 case class JSONTransitAll(data : List[JSONRoute])
-case class JSONScheduled(DateCalendar: String, Direction: Int)
+case class JSONScheduled(DateCalender: String, Direction: String)
 case class JSONStop(location_id : Int, location_name : 
                     String, location_lat : String, location_lon : String,
                     distance : String) {
@@ -97,14 +99,14 @@ case class JSONStop(location_id : Int, location_name :
   }
 }
 
-case class JSONArrival(route: String, time: String, offset: Int, warnings: String) {
+case class JSONArrival(route: String, time: DateTime, var offset: Int, warnings: String) {
   def asJson(): JObject = {
     ("route" -> route) ~
-    ("time" -> time) ~
+    ("time" -> time.toString()) ~
     ("offset" -> offset) ~
     ("warnings" -> warnings)
   }
                     
 }
 case class JSONSchedule(StopName : String, Route : String, 
-  date : String, day : String, Direction : String)
+  date : String, day : String, Direction : String, DateCalender: String)

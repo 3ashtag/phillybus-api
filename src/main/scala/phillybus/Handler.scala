@@ -13,13 +13,16 @@ import akka.util.Timeout
 import org.mashupbots.socko.events.HttpRequestEvent
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import com.github.nscala_time.time.Imports.{DateTime, DateTimeFormat}
+import com.github.nscala_time.time.RichDateTimeFormatter
 
 class StopsHandler(request: HttpRequestEvent) extends Actor {
   implicit val timeout = Timeout(4 seconds)
   implicit val formats = DefaultFormats
   val dbAccess = new DBAccess()
+  val dtf =  DateTimeFormat.forPattern("MM-dd-yy HH:mm aa");
 
-  def findClosest(stopCoords: LatLongPair, buses: List[JSONBus], direction: String): JObject = {
+  def findClosest(stopCoords: LatLongPair, buses: List[JSONBus], direction: String): JSONBus = {
     val possibleBuses = buses.filter(bus => bus.Direction != direction)
     
     var closestBus : JSONBus = null
@@ -37,10 +40,9 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       }
     }
 
-    closestBus.asJson
-
-    // return closestBus
+    closestBus
   }
+
 
   def receive = {
     case LatLongPair(latitude: Double, longitude: Double) =>
@@ -61,9 +63,47 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
     
     case ScheduleByStopid(stopId: Int) =>
       val routes = dbAccess.getRoutesByStop(stopId)
-      val routesProcessed = new ArrayBuffer[Future[Any]]
+      var allArrivals = new ArrayBuffer[JSONArrival]
 
-      println(routes)
+      for(routeId <- routes) {
+          val scheduleFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", 
+          Map("req1" -> stopId.toString, "req2" -> routeId.toString, "req6" -> "5"))
+          val busFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
+            Map("route" -> routeId.toString))
+
+          var scheduleString = Await.result(scheduleFuture, timeout.duration).asInstanceOf[String]
+          val busString = Await.result(busFuture, timeout.duration).asInstanceOf[String]
+
+          println("HI")
+          scheduleString = compact(render(parse(scheduleString) \\ routeId.toString)).replace("/", "-")
+          println(scheduleString)
+          val jsonSchedule = parse(scheduleString).extract[List[JSONSchedule]]
+          println(jsonSchedule)
+          val jsonBuses = parse(busString).extract[JSONSepta]
+
+          val direction = dbAccess.getRouteDirection(routeId.toString, jsonSchedule(0).Direction.toInt)
+          val stopCoords = dbAccess.getCoordsByStop(stopId)
+
+          val buses = jsonBuses.bus
+
+          val nextBus = findClosest(stopCoords, buses, direction)
+
+          var arrivals: ArrayBuffer[JSONArrival] = new ArrayBuffer[JSONArrival]
+
+          val warnings = "N/A"
+          jsonSchedule.foreach{ s=> 
+            val dateTime = dtf.parseDateTime(s.DateCalender)
+            arrivals += new JSONArrival(routeId.toString, dateTime, 0, warnings) 
+          }
+
+          arrivals(0).offset = nextBus.Offset.toInt
+          allArrivals ++= arrivals
+          
+      }
+      implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
+      allArrivals = allArrivals.sortBy(_.time)
+      request.response.contentType = "application/json"
+      request.response.write(compact(render(new JArray(allArrivals.map(_.asJson()).toList))))
 
     case ScheduleByStopAndRoute(stopId: Int, routeId: String) =>
       val scheduleFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", 
@@ -74,8 +114,11 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       var scheduleString = Await.result(scheduleFuture, timeout.duration).asInstanceOf[String]
       val busString = Await.result(busFuture, timeout.duration).asInstanceOf[String]
 
-      scheduleString = compact(render(parse(scheduleString) \\ routeId))
+      println("HI")
+      scheduleString = compact(render(parse(scheduleString) \\ routeId)).replace("/", "-")
+      println(scheduleString)
       val jsonSchedule = parse(scheduleString).extract[List[JSONSchedule]]
+      println(jsonSchedule)
       val jsonBuses = parse(busString).extract[JSONSepta]
 
       val direction = dbAccess.getRouteDirection(routeId, jsonSchedule(0).Direction.toInt)
@@ -85,12 +128,18 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
 
       val nextBus = findClosest(stopCoords, buses, direction)
 
-      request.response.contentType = "application/json"
-      if(nextBus != null) {
-        request.response.write(compact(render(nextBus)))
-      } else {
-        request.response.write(compact(render(JNothing)))
+      var arrivals: ArrayBuffer[JSONArrival] = new ArrayBuffer[JSONArrival]
+
+      val warnings = "N/A"
+      jsonSchedule.foreach{ s=> 
+        val dateTime = dtf.parseDateTime(s.DateCalender)
+        arrivals += new JSONArrival(routeId, dateTime, 0, warnings) 
       }
+
+      arrivals(0).offset = nextBus.Offset.toInt
+
+      request.response.contentType = "application/json"
+      request.response.write(compact(render(new JArray(arrivals.map(_.asJson()).toList))))
 
     case GetAllRoutes() =>
       val routes = dbAccess.getAllRoutes()
