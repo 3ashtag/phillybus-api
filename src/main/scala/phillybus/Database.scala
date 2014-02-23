@@ -54,7 +54,7 @@ case class CalendarDate(
     val exception_type: Boolean)
 
 case class RoutesStop(
-  val route_id: Int,
+  val route_id: String,
   val stop_id: Int)
 
 case class RouteDirection(
