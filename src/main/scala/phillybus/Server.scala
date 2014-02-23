@@ -51,6 +51,9 @@ object Server extends App {
             request.response.write(HttpResponseStatus.BAD_REQUEST)
         }
       }
+      case (GET(Path("/routes"))) => {
+        actorSystem.actorOf(Props(new StopsHandler(request))) ! GetAllRoutes()
+      }
       case _ => {
         request.response.write(HttpResponseStatus.BAD_REQUEST)
       }

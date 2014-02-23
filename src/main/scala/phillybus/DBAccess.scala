@@ -13,7 +13,7 @@ class DBAccess {
           Session.create(
           java.sql.DriverManager.getConnection("jdbc:h2:phillybus"),
           new H2Adapter))
-    
+
     transaction {
       val routes = from(Database.routesStops)(row=>
         where(row.stop_id === stopId)
@@ -21,6 +21,22 @@ class DBAccess {
       )
       routes.toList
     }
+  }
 
+  def getAllRoutes(): List[Int] = {
+    Class.forName("org.h2.Driver");
+      SessionFactory.concreteFactory = Some (() =>
+          Session.create(
+          java.sql.DriverManager.getConnection("jdbc:h2:phillybus"),
+          new H2Adapter))
+    
+    transaction {
+      val routes = from(Database.routes)(row=>
+          where(1 === 1)
+          select(row.id)
+        )
+
+      routes.toList
+    }
   }
 }

@@ -12,7 +12,6 @@ import org.mashupbots.socko.events.HttpRequestEvent
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 
-
 class StopsHandler(request: HttpRequestEvent) extends Actor {
   implicit val timeout = Timeout(10 seconds)
   implicit val formats = DefaultFormats
@@ -43,6 +42,11 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
         val result = Await.result(future, timeout.duration).asInstanceOf[String]
         // println(result)
       })
+
+    case GetAllRoutes() =>
+      val routes = dbAccess.getAllRoutes()
+      request.response.contentType = "application/json"
+      request.response.write(compact(render(new JArray(routes.map(new JInt(_))))))
 
     case _ =>
       println("Failure from StopsActor")
