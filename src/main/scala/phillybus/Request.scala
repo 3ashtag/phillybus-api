@@ -91,7 +91,7 @@ case class JSONBus(lat : String, lng : String, label : String, VehicleID : Strin
 case class JSONSepta(bus : List[JSONBus])
 case class JSONRoute(route : Map[Int, List[JSONBus]])
 case class JSONTransitAll(data : List[JSONRoute])
-
+case class JSONScheduled(DateCalendar: String, Direction: Int)
 case class JSONStop(location_id : Int, location_name : 
                     String, location_lat : String, location_lon : String,
                     distance : String) {
