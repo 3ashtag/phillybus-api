@@ -25,6 +25,7 @@ object Server extends App {
   object LatitudeQueryString extends QueryStringField("lat")
   object LongitudeQueryString extends QueryStringField("long")
   object StopIdQueryString extends QueryStringField("stopId")
+  object RouteQueryString extends QueryStringField("route")
 
   private val log = LoggerFactory.getLogger(getClass)
   val actorSystem = ActorSystem("PhillyBusFinderSystem")
@@ -54,7 +55,11 @@ object Server extends App {
       case (GET(Path("/routes"))) => {
         actorSystem.actorOf(Props(new StopsHandler(request))) ! GetAllRoutes()
       }
+      case (GET(PathSegments("routes" :: routeId :: Nil))) => {        
+          actorSystem.actorOf(Props(new BusByRouteHandler(request))) ! RouteId(routeId)
+      }
       case _ => {
+        println(request.endPoint)
         request.response.write(HttpResponseStatus.BAD_REQUEST)
       }
     }
