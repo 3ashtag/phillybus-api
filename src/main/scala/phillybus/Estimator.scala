@@ -81,7 +81,9 @@ class Estimator extends Actor {
       val stopCoords = dbAccess.getCoordsByStop(stopId)
   
       var otherDestination = "" 
-      otherDestination = jsonBuses.bus(0).destination
+      if(jsonBuses.bus.length > 0)
+        otherDestination = jsonBuses.bus(0).destination
+
       val buses = jsonBuses.bus.filter(bus => bus.Direction.replace("B", "b") == direction.replace("B", "b"))
       var destination = ""
       if(buses.length > 0)
