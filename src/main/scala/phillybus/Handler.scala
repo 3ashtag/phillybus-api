@@ -41,7 +41,7 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
           Map("req1" -> stopId.toString, "req2" -> routeId.toString, "req6" -> "5"))
         val result = Await.result(future, timeout.duration).asInstanceOf[String]
         // println(result)
-        val future1 = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView",
+        val future1 = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
           Map("route" -> routeId.toString))
         val result1 = Await.result(future1, timeout.duration).asInstanceOf[String]
         val json = parse(result1)
