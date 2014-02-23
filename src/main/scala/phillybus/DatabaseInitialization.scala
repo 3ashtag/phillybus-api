@@ -32,6 +32,7 @@ object DatabaseInitialization {
       addCalendar()
       addCalendarDates()
       addRoutesStops()
+      addRouteDirections()
     }
   }
 
@@ -123,6 +124,21 @@ object DatabaseInitialization {
       while(iterator.hasNext) {
         val row = iterator.next
         Database.routesStops.insert(new RoutesStop(row(0).toInt, row(1).toInt))
+      }
+    }
+  }
+
+  def addRouteDirections() = {
+    val reader = CSVReader.open("src/main/resources/dataSources/directions.csv")
+    val iterator = reader.iterator
+
+    //Throw away line with headers
+    iterator.next
+
+    transaction {
+      while(iterator.hasNext) {
+        val row = iterator.next
+        Database.routeDirections.insert(new RouteDirection(row(0), row(1)))
       }
     }
   }

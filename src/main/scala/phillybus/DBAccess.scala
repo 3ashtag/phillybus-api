@@ -32,11 +32,37 @@ class DBAccess {
     
     transaction {
       val routes = from(Database.routes)(row=>
-          where(1 === 1)
-          select(row.id)
-        )
+        where(1 === 1)
+        select(row.id)
+      )
 
       routes.toList
+    }
+  }
+
+  def getRouteDirection(routeName: String, direction: Int) = {
+    Class.forName("org.h2.Driver");
+      SessionFactory.concreteFactory = Some (() =>
+          Session.create(
+          java.sql.DriverManager.getConnection("jdbc:h2:phillybus"),
+          new H2Adapter))
+
+    transaction {
+      val zeroMeans = Database.routeDirections.where(row => row.route_name === routeName).single.zero_dir
+      if(direction == 0)
+        zeroMeans
+      else {
+        zeroMeans match {
+          case "Southbound" =>
+            "Northbound"
+          case "Northbound" =>
+            "Southbound"
+          case "Eastbound" =>
+            "Westbound"
+          case "Westbound" =>
+            "Eastbound"
+        }
+      }
     }
   }
 }
