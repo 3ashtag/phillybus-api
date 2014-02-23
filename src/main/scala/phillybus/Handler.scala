@@ -40,3 +40,29 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
     
   }
 }
+
+class BusByRouteHandler(request : HttpRequestEvent) extends Actor {
+  implicit val timeout = Timeout(10 seconds)
+  implicit val formats = DefaultFormats
+
+  def receive = {
+    case RouteId(routeId: String) =>
+    val future = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
+      Map("route" -> routeId))
+    val result = Await.result(future, timeout.duration).asInstanceOf[String]
+    try {
+      println(result)
+      val json = parse(result)
+      val jsonbuses = json.extract[JSONSepta]
+
+      request.response.contentType = "application/json"
+      request.response.write(compact(render(new JArray(jsonbuses.bus.map(_.asJson()).toList))))
+    } catch {
+      case ste: java.net.SocketTimeoutException => throw ste
+      case me : org.json4s.MappingException => throw me
+      case _ => List[JSONSepta]()
+    }
+    case _ =>
+      println("Failure from RequestActor")
+  }
+}
