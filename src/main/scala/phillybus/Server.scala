@@ -18,6 +18,7 @@ object Server extends App {
   private val log = LoggerFactory.getLogger(getClass)
   val actorSystem = ActorSystem("PhillyBusFinderSystem")
   
+  val estimator = actorSystem.actorOf(Props[EstimatorSupervisor]) 
   DatabaseInitialization.initDB
 
   def parseDouble(s: String) = try { Some(s.toDouble)  } catch { case _ => None  }

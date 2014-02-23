@@ -22,14 +22,14 @@ class Request() extends Actor {
 
 	def getRequest(get : GetRequest) = get match {
     case GetRequest(t : String, m : Map[String, String]) =>
-      //try {
+      try {
         val request = Http(get.url).header("content-type", "application/json").params(get.params).option(HttpOptions.readTimeout(10000)).asString
         sender ! request
-      //} catch {
-      //  case ste : java.net.SocketTimeoutException => 
-      //    log.warning(ste.toString)
-      //    sender ! ste
-      //}
+      } catch {
+        case ste : java.net.SocketTimeoutException => 
+          log.warning(ste.toString)
+          sender ! ste
+      }
     case GetRequest(t : String, null) =>
       sender ! Http(get.url).header("content-type", "application/json").option(HttpOptions.readTimeout(10000)).asString
     case _ => log.warning("Not a valid request")
