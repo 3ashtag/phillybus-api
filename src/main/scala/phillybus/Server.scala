@@ -24,6 +24,7 @@ class HelloHandler extends Actor {
 object Server extends App {
   object LatitudeQueryString extends QueryStringField("lat")
   object LongitudeQueryString extends QueryStringField("long")
+  object StopIdQueryString extends QueryStringField("stopId")
   object RouteQueryString extends QueryStringField("route")
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -32,6 +33,7 @@ object Server extends App {
   DatabaseInitialization.initDB
 
   def parseDouble(s: String) = try { Some(s.toDouble)  } catch { case _ => None  }
+  def parseInt(s: String) = try { Some(s.toInt)  } catch { case _ => None  }
   val routes = Routes({
     case HttpRequest(request) => request match {
       case (GET(Path("/stops/nearby")) & LatitudeQueryString(latitude) & LongitudeQueryString(longitude)) => {
@@ -42,10 +44,20 @@ object Server extends App {
             request.response.write(HttpResponseStatus.BAD_REQUEST)
          }
       }
+      case (GET(Path("/stops/schedules")) & StopIdQueryString(stopId)) => {
+        (parseInt(stopId)) match {
+          case Some(stop) =>
+            actorSystem.actorOf(Props(new StopsHandler(request))) ! ScheduleByStopid(stop)
+          case _ =>
+            request.response.write(HttpResponseStatus.BAD_REQUEST)
+        }
+      }
+      case (GET(Path("/routes"))) => {
+        actorSystem.actorOf(Props(new StopsHandler(request))) ! GetAllRoutes()
+      }
       case (GET(PathSegments("routes" :: routeId :: Nil))) => {        
           actorSystem.actorOf(Props(new BusByRouteHandler(request))) ! RouteId(routeId)
       }
-
       case _ => {
         println(request.endPoint)
         request.response.write(HttpResponseStatus.BAD_REQUEST)
