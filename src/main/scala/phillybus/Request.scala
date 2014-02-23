@@ -74,8 +74,20 @@ case class GetRequest(url : String, params : Map[String, String] = null) {}
 
 case class PostRequest(url : String, params : Map[String, String]) 
 
-case class JSONBus(lat : Either[String, Double], lng : String, label : String, VehicleID : String,
-			 BlockID : String, Direction : String, destination : String, Offset : String)
+case class JSONBus(lat : String, lng : String, label : String, VehicleID : String,
+			 BlockID : String, Direction : String, destination : String, Offset : String) {
+
+  def asJson() : JObject = {
+    ("lat" -> lat) ~
+    ("lng" -> lng) ~
+    ("label" -> label) ~
+    ("VehicleID" -> VehicleID) ~
+    ("BlockID" -> BlockID) ~
+    ("Direction" -> Direction) ~
+    ("destination" -> destination) ~ 
+    ("Offset" -> Offset)
+  }
+}
 case class JSONSepta(bus : List[JSONBus])
 case class JSONRoute(route : Map[Int, List[JSONBus]])
 case class JSONTransitAll(data : List[JSONRoute])
@@ -85,10 +97,10 @@ case class JSONStop(location_id : Int, location_name :
                     distance : String) {
 
   def asJson() : JObject = {
-    ("location_id" -> location_id) ~
-    ("location_name" -> location_name) ~
-    ("location_lat" -> location_lat) ~
-    ("location_lon" -> location_lon) ~
-    ("distance" -> distance)    
+    ("id" -> location_id) ~
+    ("name" -> location_name) ~
+    ("lat" -> location_lat.toDouble) ~
+    ("lon" -> location_lon.toDouble) ~
+    ("distance" -> distance.toDouble)    
   }
 }
