@@ -105,9 +105,10 @@ case class JSONStop(location_id : Int, location_name :
   }
 }
 
-case class JSONArrival(route: String, time: DateTime, var offset: Int, warnings: String) {
+case class JSONArrival(route: String, destination: String, time: DateTime, var offset: Int, warnings: String) {
   def asJson(): JObject = {
     ("route" -> route) ~
+    ("destination" -> destination) ~
     ("time" -> time.toString()) ~
     ("offset" -> offset) ~
     ("warnings" -> warnings)

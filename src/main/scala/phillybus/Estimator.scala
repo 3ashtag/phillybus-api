@@ -29,21 +29,20 @@ class Estimator extends Actor {
   val dtf =  DateTimeFormat.forPattern("MM-dd-yy HH:mm aa")
 
   
-  def findClosest(stopCoords: LatLongPair, buses: List[JSONBus], direction: String): JSONBus = {
-    val possibleBuses = buses.filter(bus => bus.Direction == direction)
+  def findClosest(stopCoords: LatLongPair, buses: List[JSONBus]): JSONBus = {
     
     var closestBus : JSONBus = null
     var minDistance : Double = 1000
     for(bus <- buses) {
       val distance = Haversine.haversine(stopCoords.latitude, stopCoords.longitude, bus.lat.toDouble, bus.lng.toDouble)
-      val pass = bus.Direction match {
-        case "SouthBound" => 
+      val pass = bus.Direction.replace("B", "b") match {
+        case "Southbound" => 
           bus.lat.toDouble >= stopCoords.latitude
-        case "NorthBound" => 
+        case "Northbound" => 
           bus.lat.toDouble <= stopCoords.latitude
-        case "EastBound" => 
+        case "Eastbound" => 
           bus.lng.toDouble <= stopCoords.longitude
-        case "WestBound" => 
+        case "Westbound" => 
           bus.lng.toDouble >= stopCoords.longitude
         case _ =>
           true
@@ -81,9 +80,17 @@ class Estimator extends Actor {
       val direction = dbAccess.getRouteDirection(routeId, jsonSchedule(0).Direction.toInt)
       val stopCoords = dbAccess.getCoordsByStop(stopId)
   
-      val buses = jsonBuses.bus
-  
-      val nextBus = findClosest(stopCoords, buses, direction)
+      var otherDestination = "" 
+      otherDestination = jsonBuses.bus(0).destination
+      val buses = jsonBuses.bus.filter(bus => bus.Direction.replace("B", "b") == direction.replace("B", "b"))
+      var destination = ""
+      if(buses.length > 0)
+        destination = buses(0).destination
+      else
+        destination = otherDestination
+
+      val nextBus = findClosest(stopCoords, buses)
+
   
       var arrivals: ArrayBuffer[JSONArrival] = new ArrayBuffer[JSONArrival]
   
@@ -92,7 +99,7 @@ class Estimator extends Actor {
       jsonSchedule.foreach{ s=> 
         val dateTime = dtf.parseDateTime(s.DateCalender)
         if(DateTime.now.isBefore(dateTime)) {
-          arrivals += new JSONArrival(routeId.toString, dateTime, 0, warnings) 
+          arrivals += new JSONArrival(routeId.toString, destination, dateTime, 0, warnings) 
         }
       }
   
