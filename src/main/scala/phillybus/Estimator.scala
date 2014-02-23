@@ -92,15 +92,20 @@ class Estimator extends Actor {
         destination = otherDestination
 
       val nextBus = findClosest(stopCoords, buses)
-
   
       var arrivals: ArrayBuffer[JSONArrival] = new ArrayBuffer[JSONArrival]
   
       val warnings = "N/A"
   
-      jsonSchedule.foreach{ s=> 
+      jsonSchedule.foreach{ s => 
+        var offset = 0
+        if(nextBus != null) {
+           offset = nextBus.Offset.toInt
+        }
+
         val dateTime = dtf.parseDateTime(s.DateCalender)
-        if(DateTime.now.isBefore(dateTime)) {
+        val cutOffTime = DateTime.now.minusMinutes(offset)
+        if(cutOffTime.isBefore(dateTime)) {
           arrivals += new JSONArrival(routeId.toString, destination, dateTime, 0, warnings) 
         }
       }
