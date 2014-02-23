@@ -94,7 +94,6 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
 
     case _ =>
       println("Failure from StopsActor")
-    
   }
 }
 

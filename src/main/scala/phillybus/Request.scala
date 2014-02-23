@@ -47,29 +47,21 @@ class Request() extends Actor {
 
 
 
-/**
-object RequestApp extends App {
+/*object RequestApp extends App {
   implicit val timeout = Timeout(10 seconds)
 	implicit val formats = DefaultFormats
   val actorSystem = ActorSystem("requestSystem")
   println(getTransitForRoute(20))	
 
-  def getTransitForRoute(routeId : Int) : List[JSONBus] = {
+  def getTransitForRoute(routeId : Int) : List[JSONSchedule] = {
     val myActor = actorSystem.actorOf(Props[Request], name="requestActor")
-    val future = myActor ? GetRequest("http://www3.septa.org/hackathon/TransitView", Map("route" -> routeId.toString))
+    val future = myActor ? GetRequest("http://www3.septa.org/hackathon/BusSchedules"
+      , Map("req1" -> "17842", "req2" -> "17"))
     val result = Await.result(future, timeout.duration).asInstanceOf[String]
-    try {
-      val json = parse(result)
-      json.extract[List[JSONBus]]
-    } catch {
-      case ste : java.net.SocketTimeoutException => throw ste
-      case _ => List[JSONBus]()
-    }
+    val json = parse(result)
+    (json \\ "17").extract[List[JSONSchedule]]
   }
-
-}
-**/
-
+}*/
 case class GetRequest(url : String, params : Map[String, String] = null) {}
 
 case class PostRequest(url : String, params : Map[String, String]) 
@@ -104,3 +96,5 @@ case class JSONStop(location_id : Int, location_name :
     ("distance" -> distance.toDouble)    
   }
 }
+case class JSONSchedule(StopName : String, Route : String, 
+  date : String, day : String, Direction : String)
