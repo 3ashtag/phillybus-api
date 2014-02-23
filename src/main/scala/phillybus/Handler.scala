@@ -10,7 +10,7 @@ import akka.actor.Props
 import akka.pattern.ask
 import akka.util.Timeout
 
-import org.mashupbots.socko.events.HttpRequestEvent
+import org.mashupbots.socko.events.{HttpRequestEvent, HttpResponseStatus}
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
 import com.github.nscala_time.time.Imports.{DateTime, DateTimeFormat}
@@ -47,7 +47,7 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       val estimatedRoutes = new ArrayBuffer[Future[Any]]
 
       routes.foreach { routeId =>
-        estimatedRoutes += estimator ? new Estimate(stopId, routeId.toString)
+        estimatedRoutes += estimator ? new Estimate(stopId, routeId)
       }
 
       import scala.concurrent.ExecutionContext.Implicits.global
@@ -61,12 +61,15 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       request.response.write(compact(render(new JArray(allArrivals.map(_.asJson()).toList))))
 
     case ScheduleByStopAndRoute(stopId: Int, routeId: String) =>
+      if(dbAccess.isRouteName(routeId))
+        request.response.write(HttpResponseStatus.BAD_REQUEST)
+      else {
+        val future = estimator ? Estimate(stopId, routeId)
+        val arrivals = Await.result(future, timeout.duration).asInstanceOf[List[JSONArrival]]
 
-      val future = estimator ? Estimate(stopId, routeId)
-      val arrivals = Await.result(future, timeout.duration).asInstanceOf[List[JSONArrival]]
-      
-      request.response.contentType = "application/json"
-      request.response.write(compact(render(new JArray(arrivals.map(_.asJson()).toList))))
+        request.response.contentType = "application/json"
+        request.response.write(compact(render(new JArray(arrivals.map(_.asJson()).toList))))
+      }
 
     case GetAllRoutes() =>
       val routes = dbAccess.getAllRoutes()
@@ -87,7 +90,7 @@ class RouteHandler(request : HttpRequestEvent) extends Actor {
   def receive = {
     case RoutesByStopId(stopId: Int) =>
       val routes = dbAccess.getRoutesByStop(stopId)
-      val routesJSON: List[JObject] = routes.map{x => new JSONRouteInfo(x.toString).asJson()}
+      val routesJSON: List[JObject] = routes.map{x => new JSONRouteInfo(x).asJson()}
       request.response.contentType = "application/json"
       request.response.write(compact(render(new JArray(routesJSON.toList))))
   }
@@ -97,24 +100,29 @@ class RouteHandler(request : HttpRequestEvent) extends Actor {
 class BusByRouteHandler(request : HttpRequestEvent) extends Actor {
   implicit val timeout = Timeout(10 seconds)
   implicit val formats = DefaultFormats
+  val dbAccess = new DBAccess()
 
   def receive = {
     case RouteId(routeId: String) =>
-    val future = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
-      Map("route" -> routeId))
-    val result = Await.result(future, timeout.duration).asInstanceOf[String]
-    try {
-    //  println(result)
-      val json = parse(result)
-      val jsonbuses = json.extract[JSONSepta]
+      if(dbAccess.isRouteName(routeId))
+        request.response.write(HttpResponseStatus.BAD_REQUEST)
+      else {
+        val future = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
+          Map("route" -> routeId))
+        val result = Await.result(future, timeout.duration).asInstanceOf[String]
+        try {
+        //  println(result)
+          val json = parse(result)
+          val jsonbuses = json.extract[JSONSepta]
 
-      request.response.contentType = "application/json"
-      request.response.write(compact(render(new JArray(jsonbuses.bus.map(_.asJson()).toList))))
-    } catch {
-      case ste: java.net.SocketTimeoutException => throw ste
-      case me : org.json4s.MappingException => throw me
-      case e: Exception =>e.printStackTrace()
-    }
+          request.response.contentType = "application/json"
+          request.response.write(compact(render(new JArray(jsonbuses.bus.map(_.asJson()).toList))))
+        } catch {
+          case ste: java.net.SocketTimeoutException => throw ste
+          case me : org.json4s.MappingException => throw me
+          case e: Exception =>e.printStackTrace()
+        }
+      }
     case _ =>
       println("Failure from RequestActor")
   }

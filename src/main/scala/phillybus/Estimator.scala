@@ -67,18 +67,18 @@ class Estimator extends Actor {
   def receive = {
     case Estimate(stopId: Int, routeId: String) =>
       val scheduleFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/BusSchedules", 
-          Map("req1" -> stopId.toString, "req2" -> routeId.toString, "req6" -> "5"))
+          Map("req1" -> stopId.toString, "req2" -> routeId, "req6" -> "5"))
       val busFuture = context.system.actorOf(Props[Request]) ? GetRequest("http://www3.septa.org/hackathon/TransitView", 
-          Map("route" -> routeId.toString))
+          Map("route" -> routeId))
 
       var scheduleString = Await.result(scheduleFuture, timeout.duration).asInstanceOf[String]
       val busString = Await.result(busFuture, timeout.duration).asInstanceOf[String]
   
-      scheduleString = compact(render(parse(scheduleString) \\ routeId.toString)).replace("/", "-")
+      scheduleString = compact(render(parse(scheduleString) \\ routeId)).replace("/", "-")
       val jsonSchedule = parse(scheduleString).extract[List[JSONSchedule]]
       val jsonBuses = parse(busString).extract[JSONSepta]
   
-      val direction = dbAccess.getRouteDirection(routeId.toString, jsonSchedule(0).Direction.toInt)
+      val direction = dbAccess.getRouteDirection(routeId, jsonSchedule(0).Direction.toInt)
       val stopCoords = dbAccess.getCoordsByStop(stopId)
   
       val buses = jsonBuses.bus

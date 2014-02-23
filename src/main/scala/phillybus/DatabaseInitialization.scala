@@ -123,7 +123,7 @@ object DatabaseInitialization {
     transaction {
       while(iterator.hasNext) {
         val row = iterator.next
-        Database.routesStops.insert(new RoutesStop(row(0).toInt, row(1).toInt))
+        Database.routesStops.insert(new RoutesStop(row(0), row(1).toInt))
       }
     }
   }
