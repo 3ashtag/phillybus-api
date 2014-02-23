@@ -30,14 +30,27 @@ class Estimator extends Actor {
 
   
   def findClosest(stopCoords: LatLongPair, buses: List[JSONBus], direction: String): JSONBus = {
-    val possibleBuses = buses.filter(bus => bus.Direction != direction)
+    val possibleBuses = buses.filter(bus => bus.Direction == direction)
     
     var closestBus : JSONBus = null
     var minDistance : Double = 1000
     for(bus <- buses) {
       val distance = Haversine.haversine(stopCoords.latitude, stopCoords.longitude, bus.lat.toDouble, bus.lng.toDouble)
+      val pass = bus.Direction match {
+        case "SouthBound" => 
+          bus.lat.toDouble >= stopCoords.latitude
+        case "NorthBound" => 
+          bus.lat.toDouble <= stopCoords.latitude
+        case "EastBound" => 
+          bus.lng.toDouble <= stopCoords.longitude
+        case "WestBound" => 
+          bus.lng.toDouble >= stopCoords.longitude
+        case _ =>
+          true
+
+     }
       if(closestBus != null){
-        if(distance < minDistance){
+        if(distance < minDistance && pass){
           closestBus = bus
           minDistance = distance
         }

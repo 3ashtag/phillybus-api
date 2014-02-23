@@ -17,7 +17,7 @@ import com.github.nscala_time.time.Imports.{DateTime, DateTimeFormat}
 import com.github.nscala_time.time.RichDateTimeFormatter
 
 class StopsHandler(request: HttpRequestEvent) extends Actor {
-  implicit val timeout = Timeout(15 seconds)
+  implicit val timeout = Timeout(20 seconds)
   implicit val formats = DefaultFormats
   val dbAccess = new DBAccess()
   private val estimator = context.actorSelection("/user/estimatorrouter") 
