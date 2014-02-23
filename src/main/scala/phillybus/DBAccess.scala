@@ -40,7 +40,7 @@ class DBAccess {
     }
   }
 
-  def getRouteDirection(routeName: String, direction: Int) = {
+  def getRouteDirection(routeName: String, direction: Int): String = {
     Class.forName("org.h2.Driver");
       SessionFactory.concreteFactory = Some (() =>
           Session.create(
@@ -63,6 +63,19 @@ class DBAccess {
             "Eastbound"
         }
       }
+    }
+  }
+
+  def getCordsByStop(stopId: Int): LatLongPair = {
+    Class.forName("org.h2.Driver");
+      SessionFactory.concreteFactory = Some (() =>
+          Session.create(
+          java.sql.DriverManager.getConnection("jdbc:h2:phillybus"),
+          new H2Adapter))
+
+    transaction {
+      val stopData = Database.stops.where(row => row.id === stopId).single
+      new LatLongPair(stopData.stop_lon, stopData.stop_lat)
     }
   }
 }
