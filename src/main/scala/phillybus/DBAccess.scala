@@ -7,7 +7,7 @@ import org.squeryl.PrimitiveTypeMode._
 
 class DBAccess {
 
-  def getRoutesByStop(stopId: Int): List[Int] = {
+  def getRoutesByStop(stopId: Int): List[String] = {
     Class.forName("org.h2.Driver");
       SessionFactory.concreteFactory = Some (() =>
           Session.create(
@@ -15,9 +15,9 @@ class DBAccess {
           new H2Adapter))
 
     transaction {
-      val routes = from(Database.routesStops)(row=>
-        where(row.stop_id === stopId)
-        select(row.route_id)
+      val routes = from(Database.routesStops)(routeStop =>
+        where(routeStop.stop_id === stopId)
+        select(routeStop.route_id)
       )
       routes.toList
     }

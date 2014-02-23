@@ -47,7 +47,7 @@ class StopsHandler(request: HttpRequestEvent) extends Actor {
       val estimatedRoutes = new ArrayBuffer[Future[Any]]
 
       routes.foreach { routeId =>
-        estimatedRoutes += estimator ? new Estimate(stopId, routeId.toString)
+        estimatedRoutes += estimator ? new Estimate(stopId, routeId)
       }
 
       import scala.concurrent.ExecutionContext.Implicits.global
@@ -87,7 +87,7 @@ class RouteHandler(request : HttpRequestEvent) extends Actor {
   def receive = {
     case RoutesByStopId(stopId: Int) =>
       val routes = dbAccess.getRoutesByStop(stopId)
-      val routesJSON: List[JObject] = routes.map{x => new JSONRouteInfo(x.toString).asJson()}
+      val routesJSON: List[JObject] = routes.map{x => new JSONRouteInfo(x).asJson()}
       request.response.contentType = "application/json"
       request.response.write(compact(render(new JArray(routesJSON.toList))))
   }
