@@ -3,6 +3,7 @@
 import sbt._
 import Keys._
 import com.typesafe.sbteclipse.plugin.EclipsePlugin._
+import com.typesafe.sbt.SbtStartScript
 import sbt.Project.Initialize
 
 object PhillyBus extends Build {
@@ -29,7 +30,7 @@ object PhillyBus extends Build {
 
   lazy val root = Project(id ="phillybus",
                           base = file("."),
-                          settings = defaultSettings ++ Unidoc.settings ++ Seq(
+                          settings = defaultSettings ++ Unidoc.settings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(
                             publishArtifact := false,
                             scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", baseDirectory.value+"/root-doc.html"),
                             logLevel := Level.Warn,

@@ -75,7 +75,7 @@ object Server extends App {
     }
   })
 
-  val config = new WebServerConfig(actorSystem.settings.config, "philly-config")
+  val config = new WebServerConfig(port=try { sys.env("PORT").toInt  } catch {case e: Exception => 8686})
   val webServer = new WebServer(config, routes, actorSystem)
   webServer.start()
   println("Server is Starting")

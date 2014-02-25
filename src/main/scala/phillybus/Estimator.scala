@@ -26,13 +26,13 @@ class Estimator extends Actor {
 
   val dbAccess = new DBAccess()
 
-  val dtf =  DateTimeFormat.forPattern("MM-dd-yy HH:mm aa")
+  val dtf =  DateTimeFormat.forPattern("MM-dd-yy h:mm aa")
 
   
   def findClosest(stopCoords: LatLongPair, buses: List[JSONBus]): JSONBus = {
     
     var closestBus : JSONBus = null
-    var minDistance : Double = 1000
+    var minDistance : Double = Double.PositiveInfinity
     for(bus <- buses) {
       val distance = Haversine.haversine(stopCoords.latitude, stopCoords.longitude, bus.lat.toDouble, bus.lng.toDouble)
       val pass = bus.Direction.replace("B", "b") match {
@@ -104,13 +104,13 @@ class Estimator extends Actor {
         }
 
         val dateTime = dtf.parseDateTime(s.DateCalender)
-        val cutOffTime = DateTime.now.minusMinutes(offset)
+        val cutOffTime = DateTime.now.minusMinutes(offset + 1)
         if(cutOffTime.isBefore(dateTime)) {
           arrivals += new JSONArrival(routeId.toString, destination, dateTime, 0, warnings) 
         }
       }
   
-      if(nextBus != null) {
+      if(nextBus != null && arrivals.length > 0) {
         arrivals(0).offset = nextBus.Offset.toInt
       }
   
