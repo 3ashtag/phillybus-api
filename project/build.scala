@@ -13,14 +13,7 @@ object PhillyBus extends Build {
     version := "0.0.1",
     scalaVersion := Dependency.V.Scala,
     EclipseKeys.createSrc := EclipseCreateSrc.ValueSet(EclipseCreateSrc.Unmanaged, EclipseCreateSrc.Source, EclipseCreateSrc.Resource),
-    EclipseKeys.withSource := true,
-    publishTo := {
-      val nexus = "https://oss.sonatype.org/"
-        if (isSnapshot.value)
-          Some("snapshots" at nexus + "content/repositories/snapshots")
-        else
-          Some("releases" at nexus + "service/local/staging/deploy/maven2")
-    }
+    EclipseKeys.withSource := true
   )
 
   lazy val compileJdk7Settings = Seq(
@@ -32,7 +25,6 @@ object PhillyBus extends Build {
                           base = file("."),
                           settings = defaultSettings ++ Unidoc.settings ++ SbtStartScript.startScriptForClassesSettings ++ Seq(
                             publishArtifact := false,
-                            scalacOptions in (Compile, doc) ++= Seq("-doc-root-content", baseDirectory.value+"/root-doc.html"),
                             logLevel := Level.Warn,
                             libraryDependencies ++= Dependencies.phillybus))
 }
